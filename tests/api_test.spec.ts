@@ -15,9 +15,7 @@ test.describe("Vexrun API", () => {
   let submissions_id: string | undefined;
 
   test.beforeAll("cleaning all forms before tests", async ({ request }) => {
-    const listResponse = await request.get("/v1/forms", {
-      headers: HEADERS,
-    });
+    const listResponse = await new FormsApi(request).getAll(HEADERS);
     expect(listResponse.status()).toBe(200);
 
     const body = await listResponse.json();
@@ -25,30 +23,10 @@ test.describe("Vexrun API", () => {
     const formIds: string[] = forms.map((f: { id: string }) => f.id);
 
     for (const id of formIds) {
-      const deleteResponse = await request.delete(`/v1/forms/${id}`, {
-        headers: HEADERS,
-      });
+      const deleteResponse = await new FormsApi(request).delete(HEADERS, id);
       expect(deleteResponse.status()).toBe(204);
     }
   });
-
-  // test("create form", async ({ request }) => {
-  //   const response = await request.post("/v1/forms", {
-  //     headers: HEADERS,
-  //     data: {
-  //       name: "test",
-  //       is_enabled: true,
-  //       limit: 20,
-  //       honeypot_field: "age",
-  //       redirect_url: null,
-  //       success_title: "OK",
-  //       success_message: "created new submission",
-  //     },
-  //   });
-  //   expect(response.status()).toBe(201);
-  //   forms_id.push((await response.json()).id);
-  //   expect(forms_id).toBeTruthy();
-  // });
 
   test("create form", async ({ request }) => {
     const response = await new FormsApi(request).create(VALID_FORM);
@@ -104,39 +82,24 @@ test.describe("Vexrun API", () => {
   });
 
   test("update form", async ({ request }) => {
-    // const response = await request.patch(`/v1/forms/${forms_id}`, {
-    //   headers: HEADERS,
-    //   data: {
-    //     name: "test_edit",
-    //     is_enabled: false,
-    //     limit: 20,
-    //     honeypot_field: "age_edit",
-    //     success_title: "Edit",
-    //     success_message: "edit submission",
-    //   },
-    // });
-    // expect(response.status()).toBe(200);
-
     const response = await new FormsApi(request).update(
       EDITED_FORM,
       HEADERS,
-      forms_id,
+      forms_id[0]!,
     );
     expect(expect(response.status()).toBe(200));
   });
 
   test("get form overwiew", async ({ request }) => {
-    const response = await new FormsApi(request).get(forms_id);
+    const response = await new FormsApi(request).getOverview(forms_id[0]!);
     expect(response.status()).toBe(200);
   });
 
   test("duplicate form", async ({ request }) => {
-    // const response = await request.post(`/v1/forms/${forms_id}/duplicate`, {
-    //   headers: HEADERS,
-    // });
-    // expect(response.status()).toBe(201);
-    // forms_id.push((await response.json()).id);
-    const response = await new FormsApi(request).duplicate(HEADERS, forms_id);
+    const response = await new FormsApi(request).duplicate(
+      HEADERS,
+      forms_id[0]!,
+    );
     expect(response.status()).toBe(201);
     forms_id.push((await response.json()).id);
   });

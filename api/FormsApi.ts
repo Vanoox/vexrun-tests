@@ -8,26 +8,30 @@ export class FormsApi {
     this.request = request;
   }
 
-  create(data: object, headers: object = HEADERS) {
+  create(data: object, headers: Record<string, string> = HEADERS) {
     return this.request.post("/v1/forms", { headers, data });
   }
 
-  update(data: object, headers: object = HEADERS, form_id: Array<string>) {
+  update(
+    data: object,
+    headers: Record<string, string> = HEADERS,
+    form_id: string,
+  ) {
     return this.request.patch(`v1/forms/${form_id}`, { headers, data });
   }
 
-  duplicate(headers: object = HEADERS, form_id: Array<string>) {
+  duplicate(headers: Record<string, string> = HEADERS, form_id: string) {
     return this.request.post(`v1/forms/${form_id}/duplicate`, { headers });
   }
 
-  get(form_id: Array<string>) {
+  getOverview(form_id: string) {
     return this.request.get(`v1/forms/${form_id}/overview`);
   }
 
-  getAll(headers: object = HEADERS) {
+  getAll(headers: Record<string, string> = HEADERS) {
     return this.request.get(`v1/forms`, { headers });
   }
-  delete(headers: object = HEADERS, form_id: string) {
+  delete(headers: Record<string, string> = HEADERS, form_id: string) {
     return this.request.delete(`v1/forms/${form_id}`, { headers });
   }
 }
