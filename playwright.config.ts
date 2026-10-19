@@ -5,7 +5,7 @@ import { defineConfig, devices } from "@playwright/test";
  */
 process.loadEnvFile();
 
-/* Cookies shared by every test (valid ~1 month, refresh values in .env) */
+/* Cookies shared by every UI test (valid ~1 month, refresh values in .env) */
 const sessionCookie = {
   domain: "dev.vexrun.com",
   path: "/",
@@ -15,89 +15,82 @@ const sessionCookie = {
   sameSite: "Lax" as const,
 };
 
+/* Settings shared by every UI project (each one only adds its browser) */
+const uiUse = {
+  baseURL: "https://dev.vexrun.com",
+  storageState: {
+    cookies: [
+      { ...sessionCookie, name: "SID", value: process.env.SID! },
+      {
+        ...sessionCookie,
+        name: "last-active-team-id",
+        value: process.env.ACTIVE_TEAM!,
+      },
+    ],
+    origins: [],
+  },
+};
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
   testDir: "./tests",
-  /* Run tests in files in parallel */
-  fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /* Global limit of parallel workers (default would be half of CPU cores) */
+  workers: process.env.CI ? 2 : 4,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: "html",
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: "https://forms.dev.vexrun.com",
-
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: "on-first-retry",
-
-    /* Every test starts with these cookies already set */
-    storageState: {
-      cookies: [
-        { ...sessionCookie, name: "SID", value: process.env.SID! },
-        {
-          ...sessionCookie,
-          name: "last-active-team-id",
-          value: process.env.ACTIVE_TEAM!,
-        },
-      ],
-      origins: [],
-    },
+    /* Keep trace only for failed tests. See https://playwright.dev/docs/trace-viewer */
+    trace: "retain-on-failure",
   },
 
-  /* Configure projects for major browsers */
   projects: [
+    /* API tests – no browser, one at a time (they clean shared data) */
     {
-      name: "chrome",
-      use: { ...devices["Desktop Chrome"], channel: "chrome" }, // lub 'msedge'
+      name: "api",
+      testDir: "./tests/api",
+      fullyParallel: false,
+      workers: 1,
+      use: {
+        baseURL: "https://forms.dev.vexrun.com",
+        /* Added to every request made with the `request` fixture */
+        extraHTTPHeaders: {
+          "x-team-id": process.env.X_TEAM_ID_TEST_API!,
+          "x-api-key": process.env.X_API_KEY_TEST_API!,
+        },
+      },
     },
-    // {
-    //   name: "chromium",
-    //   use: { ...devices["Desktop Chrome"] },
-    // },
 
-    // {
-    //   name: "firefox",
-    //   use: { ...devices["Desktop Firefox"] },
-    // },
-
-    // {
-    //   name: "webkit",
-    //   use: { ...devices["Desktop Safari"] },
-    // },
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
+    /* UI tests – the same tests run in every browser below */
+    {
+      name: "ui-chrome",
+      testDir: "./tests/ui",
+      fullyParallel: true,
+      use: { ...devices["Desktop Chrome"], channel: "chrome", ...uiUse },
+    },
+    {
+      name: "ui-firefox",
+      testDir: "./tests/ui",
+      fullyParallel: true,
+      use: { ...devices["Desktop Firefox"], ...uiUse },
+    },
+    {
+      name: "ui-webkit",
+      testDir: "./tests/ui",
+      fullyParallel: true,
+      use: { ...devices["Desktop Safari"], ...uiUse },
+    },
+    {
+      name: "ui-edge",
+      testDir: "./tests/ui",
+      fullyParallel: true,
+      use: { ...devices["Desktop Edge"], channel: "msedge", ...uiUse },
+    },
   ],
-
-  /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://localhost:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
 });

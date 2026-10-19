@@ -4,9 +4,9 @@ import {
   DATA_REQUEST,
   VALID_FORM,
   EDITED_FORM,
-} from "../test-data/api_test_data.js";
-import { FormsApi } from "../api/FormsApi.js";
-import { SubmissionsAPI } from "../api/SubmissionsApi.js";
+} from "../../test-data/api_test_data.js";
+import { FormsApi } from "../../api/FormsApi.js";
+import { SubmissionsAPI } from "../../api/SubmissionsApi.js";
 
 process.loadEnvFile();
 
