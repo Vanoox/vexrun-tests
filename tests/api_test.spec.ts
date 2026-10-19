@@ -6,13 +6,15 @@ import {
   EDITED_FORM,
 } from "../test-data/api_test_data.js";
 import { FormsApi } from "../api/FormsApi.js";
+import { SubmissionsAPI } from "../api/SubmissionsApi.js";
+
 process.loadEnvFile();
 
 test.describe("Vexrun API", () => {
   test.describe.configure({ mode: "serial" });
 
   let forms_id: Array<string> = [];
-  let submissions_id: string | undefined;
+  let submissions_id: string;
 
   test.beforeAll("cleaning all forms before tests", async ({ request }) => {
     const listResponse = await new FormsApi(request).getAll(HEADERS);
@@ -35,11 +37,10 @@ test.describe("Vexrun API", () => {
   });
 
   test("create submissions", async ({ request }) => {
-    const response = await request.post(`/v1/forms/${forms_id[0]}`, {
-      headers: { Accept: "application/json" },
-      maxRedirects: 0,
-      data: DATA_REQUEST,
-    });
+    const response = await new SubmissionsAPI(request).create(
+      DATA_REQUEST,
+      forms_id[0]!,
+    );
     expect(response.status()).toBe(201);
   });
 
@@ -47,11 +48,9 @@ test.describe("Vexrun API", () => {
     await expect
       .poll(
         async () => {
-          const response = await request.get(
-            `/v1/forms/${forms_id[0]}/submissions`,
-            {
-              headers: HEADERS,
-            },
+          const response = await new SubmissionsAPI(request).listMany(
+            HEADERS,
+            forms_id[0]!,
           );
           expect(response.status()).toBe(200);
           const body = await response.json();
@@ -64,9 +63,10 @@ test.describe("Vexrun API", () => {
   });
 
   test("get submission", async ({ request }) => {
-    const response = await request.get(
-      `/v1/forms/${forms_id[0]}/submissions/${submissions_id}`,
-      { headers: HEADERS },
+    const response = await new SubmissionsAPI(request).get(
+      HEADERS,
+      forms_id[0]!,
+      submissions_id,
     );
     expect(response.status()).toBe(200);
     const body = await response.json();
@@ -74,9 +74,10 @@ test.describe("Vexrun API", () => {
   });
 
   test("delete submission", async ({ request }) => {
-    const response = await request.delete(
-      `/v1/forms/${forms_id[0]}/submissions/${submissions_id}`,
-      { headers: HEADERS },
+    const response = await new SubmissionsAPI(request).delete(
+      HEADERS,
+      forms_id[0]!,
+      submissions_id,
     );
     expect(response.status()).toBe(204);
   });
@@ -87,7 +88,7 @@ test.describe("Vexrun API", () => {
       HEADERS,
       forms_id[0]!,
     );
-    expect(expect(response.status()).toBe(200));
+    expect(response.status()).toBe(200);
   });
 
   test("get form overwiew", async ({ request }) => {
