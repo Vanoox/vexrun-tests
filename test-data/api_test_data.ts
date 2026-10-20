@@ -31,7 +31,7 @@ export const EDITED_FORM = {
 // Wygląda jak wypełniony formularz kontaktowy i zawiera każdy typ danych:
 // tekst, liczbę, true/false, null, listę i obiekt w obiekcie.
 // Test "get submission" sprawdza, czy API zwraca dokładnie te dane.
-export const DATA_REQUEST = {
+export const VALID_SUBMISSION = {
   imie: "Anna",
   nazwisko: "Kowalska",
   email: "anna.kowalska@example.com",

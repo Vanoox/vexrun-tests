@@ -1,39 +1,57 @@
-import type { APIRequestContext } from "@playwright/test";
+import { expect, type APIRequestContext } from "@playwright/test";
 import { HEADERS } from "../test-data/api_test_data.js";
 
-export class SubmissionsAPI {
+export class SubmissionsApi {
   request: APIRequestContext;
 
   constructor(request: APIRequestContext) {
     this.request = request;
   }
 
-  create(data: object, form_id: string) {
-    return this.request.post(`v1/forms/${form_id}`, { data });
+  create(data: object, formId: string) {
+    return this.request.post(`v1/forms/${formId}`, { data });
+  }
+
+  async waitForFirstSubmissionId(formId: string) {
+    let submissionId: string | undefined;
+
+    await expect
+      .poll(
+        async () => {
+          const listResponse = await this.list(HEADERS, formId);
+          expect(listResponse.status()).toBe(200);
+          const body = await listResponse.json();
+          submissionId = body.results[0]?.id;
+          return submissionId;
+        },
+        { timeout: 10_000, intervals: [500, 1000, 2000] },
+      )
+      .toBeDefined();
+
+    return submissionId!;
   }
 
   get(
     headers: Record<string, string> = HEADERS,
-    form_id: string,
-    submission_id: string,
+    formId: string,
+    submissionId: string,
   ) {
-    return this.request.get(
-      `/v1/forms/${form_id}/submissions/${submission_id}`,
-      { headers },
-    );
+    return this.request.get(`/v1/forms/${formId}/submissions/${submissionId}`, {
+      headers,
+    });
   }
 
-  listMany(headers: Record<string, string> = HEADERS, form_id: string) {
-    return this.request.get(`/v1/forms/${form_id}/submissions`, { headers });
+  list(headers: Record<string, string> = HEADERS, formId: string) {
+    return this.request.get(`/v1/forms/${formId}/submissions`, { headers });
   }
 
   delete(
     headers: Record<string, string> = HEADERS,
-    form_id: string,
-    submission_id: string,
+    formId: string,
+    submissionId: string,
   ) {
     return this.request.delete(
-      `/v1/forms/${form_id}/submissions/${submission_id}`,
+      `/v1/forms/${formId}/submissions/${submissionId}`,
       { headers },
     );
   }

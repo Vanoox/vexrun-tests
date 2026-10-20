@@ -53,17 +53,24 @@ export default defineConfig({
   projects: [
     /* API tests – no browser, one at a time (they clean shared data) */
     {
+      name: "api-cleanup",
+      testDir: "./tests/api",
+      testMatch: /.*\.setup\.ts/,
+      use: { baseURL: "https://forms.dev.vexrun.com" },
+    },
+    {
       name: "api",
       testDir: "./tests/api",
+      dependencies: ["api-cleanup"],
       fullyParallel: false,
       workers: 1,
       use: {
         baseURL: "https://forms.dev.vexrun.com",
         /* Added to every request made with the `request` fixture */
-        extraHTTPHeaders: {
-          "x-team-id": process.env.X_TEAM_ID_TEST_API!,
-          "x-api-key": process.env.X_API_KEY_TEST_API!,
-        },
+        // extraHTTPHeaders: {
+        //   "x-team-id": process.env.X_TEAM_ID_TEST_API!,
+        //   "x-api-key": process.env.X_API_KEY_TEST_API!,
+        // },
       },
     },
 
