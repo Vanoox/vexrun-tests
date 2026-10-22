@@ -12,15 +12,11 @@ export class FormsApi {
     return this.request.post("/v1/forms", { headers, data });
   }
 
-  update(
-    data: object,
-    headers: Record<string, string> = HEADERS,
-    formId: string,
-  ) {
+  update(data: object, headers: Record<string, string>, formId: string) {
     return this.request.patch(`v1/forms/${formId}`, { headers, data });
   }
 
-  duplicate(headers: Record<string, string> = HEADERS, formId: string) {
+  duplicate(headers: Record<string, string>, formId: string) {
     return this.request.post(`v1/forms/${formId}/duplicate`, { headers });
   }
 
@@ -32,7 +28,7 @@ export class FormsApi {
     return this.request.get(`v1/forms`, { headers });
   }
 
-  delete(headers: Record<string, string> = HEADERS, formId: string) {
+  delete(headers: Record<string, string>, formId: string) {
     return this.request.delete(`v1/forms/${formId}`, { headers });
   }
 }

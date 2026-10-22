@@ -31,22 +31,25 @@ export class SubmissionsApi {
     return submissionId!;
   }
 
-  get(
-    headers: Record<string, string> = HEADERS,
-    formId: string,
-    submissionId: string,
-  ) {
+  get(headers: Record<string, string>, formId: string, submissionId: string) {
     return this.request.get(`/v1/forms/${formId}/submissions/${submissionId}`, {
       headers,
     });
   }
 
-  list(headers: Record<string, string> = HEADERS, formId: string) {
-    return this.request.get(`/v1/forms/${formId}/submissions`, { headers });
+  list(
+    headers: Record<string, string>,
+    formId: string,
+    params?: Record<string, string | number>,
+  ) {
+    return this.request.get(`/v1/forms/${formId}/submissions`, {
+      headers,
+      params: params ?? {},
+    });
   }
 
   delete(
-    headers: Record<string, string> = HEADERS,
+    headers: Record<string, string>,
     formId: string,
     submissionId: string,
   ) {

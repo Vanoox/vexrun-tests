@@ -8,6 +8,13 @@ import {
   FORM_SPECIAL_CHARS,
   INVALID_FORMS,
   FORM_MISSING_FIELDS,
+  UPDATE_ONLY_NAME,
+  UPDATE_DISABLE_FORM,
+  UPDATE_ENABLE_FORM,
+  UPDATE_LIMIT_ONE,
+  UPDATE_CLEAR_OPTIONAL,
+  UPDATE_EMPTY,
+  UPDATE_INVALID,
 } from "../../test-data/api_test_data.js";
 import { FormsApi } from "../../api/FormsApi.js";
 
@@ -61,6 +68,69 @@ test.describe("Forms API – existing form", () => {
       formId,
     );
     expect(response.status()).toBe(200);
+  });
+
+  test("update form only name", async ({ request }) => {
+    const response = await new FormsApi(request).update(
+      UPDATE_ONLY_NAME,
+      HEADERS,
+      formId,
+    );
+    expect(response.status()).toBe(200);
+  });
+
+  test("update form disable form", async ({ request }) => {
+    const response = await new FormsApi(request).update(
+      UPDATE_DISABLE_FORM,
+      HEADERS,
+      formId,
+    );
+    expect(response.status()).toBe(200);
+  });
+
+  test("update form enable form", async ({ request }) => {
+    const response = await new FormsApi(request).update(
+      UPDATE_ENABLE_FORM,
+      HEADERS,
+      formId,
+    );
+    expect(response.status()).toBe(200);
+  });
+
+  test("update form limit 1", async ({ request }) => {
+    const response = await new FormsApi(request).update(
+      UPDATE_LIMIT_ONE,
+      HEADERS,
+      formId,
+    );
+    expect(response.status()).toBe(200);
+  });
+
+  test("update form clear optional field", async ({ request }) => {
+    const response = await new FormsApi(request).update(
+      UPDATE_CLEAR_OPTIONAL,
+      HEADERS,
+      formId,
+    );
+    expect(response.status()).toBe(200);
+  });
+
+  test("update form clear without change", async ({ request }) => {
+    const response = await new FormsApi(request).update(
+      UPDATE_EMPTY,
+      HEADERS,
+      formId,
+    );
+    expect(response.status()).toBe(200);
+  });
+
+  test("update form too short name", async ({ request }) => {
+    const response = await new FormsApi(request).update(
+      UPDATE_INVALID,
+      HEADERS,
+      formId,
+    );
+    expect(response.status()).toBe(400);
   });
 
   test("get form overview", async ({ request }) => {
