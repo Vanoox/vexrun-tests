@@ -22,21 +22,29 @@ test.describe("Forms API – create", () => {
   test("create form with valid data", async ({ request }) => {
     const response = await new FormsApi(request).create(VALID_FORM);
     expect(response.status()).toBe(201);
+    const body = await response.json();
+    expect(body).toMatchObject(VALID_FORM);
   });
 
   test("create form with min values", async ({ request }) => {
     const response = await new FormsApi(request).create(FORM_MIN_VALUES);
     expect(response.status()).toBe(201);
+    const body = await response.json();
+    expect(body).toMatchObject(FORM_MIN_VALUES);
   });
 
   test("create form with max values", async ({ request }) => {
     const response = await new FormsApi(request).create(FORM_MAX_VALUES);
     expect(response.status()).toBe(201);
+    const body = await response.json();
+    expect(body).toMatchObject(FORM_MAX_VALUES);
   });
 
   test("create form with special chars", async ({ request }) => {
     const response = await new FormsApi(request).create(FORM_SPECIAL_CHARS);
     expect(response.status()).toBe(201);
+    const body = await response.json();
+    expect(body).toMatchObject(FORM_SPECIAL_CHARS);
   });
 
   for (const [caseName, data] of Object.entries(INVALID_FORMS)) {
@@ -68,6 +76,8 @@ test.describe("Forms API – existing form", () => {
       formId,
     );
     expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject(EDITED_FORM);
   });
 
   test("update form only name", async ({ request }) => {
@@ -77,6 +87,8 @@ test.describe("Forms API – existing form", () => {
       formId,
     );
     expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject({ ...VALID_FORM, ...UPDATE_ONLY_NAME });
   });
 
   test("update form disable form", async ({ request }) => {
@@ -86,6 +98,8 @@ test.describe("Forms API – existing form", () => {
       formId,
     );
     expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject(UPDATE_DISABLE_FORM);
   });
 
   test("update form enable form", async ({ request }) => {
@@ -95,6 +109,8 @@ test.describe("Forms API – existing form", () => {
       formId,
     );
     expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject(UPDATE_ENABLE_FORM);
   });
 
   test("update form limit 1", async ({ request }) => {
@@ -104,6 +120,8 @@ test.describe("Forms API – existing form", () => {
       formId,
     );
     expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject(UPDATE_LIMIT_ONE);
   });
 
   test("update form clear optional field", async ({ request }) => {
@@ -113,15 +131,17 @@ test.describe("Forms API – existing form", () => {
       formId,
     );
     expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject(UPDATE_CLEAR_OPTIONAL);
   });
 
-  test("update form clear without change", async ({ request }) => {
+  test("update form with empty body", async ({ request }) => {
     const response = await new FormsApi(request).update(
       UPDATE_EMPTY,
       HEADERS,
       formId,
     );
-    expect(response.status()).toBe(200);
+    expect(response.status()).toBe(400);
   });
 
   test("update form too short name", async ({ request }) => {
@@ -136,11 +156,20 @@ test.describe("Forms API – existing form", () => {
   test("get form overview", async ({ request }) => {
     const response = await new FormsApi(request).getOverview(formId);
     expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject({
+      status: "open",
+      redirect_url: VALID_FORM.redirect_url,
+      success_title: VALID_FORM.success_title,
+      success_message: VALID_FORM.success_message,
+    });
   });
 
   test("duplicate form", async ({ request }) => {
     const response = await new FormsApi(request).duplicate(HEADERS, formId);
     expect(response.status()).toBe(201);
+    const body = await response.json();
+    expect(body).toMatchObject(VALID_FORM);
   });
 
   test("list forms", async ({ request }) => {
@@ -151,5 +180,7 @@ test.describe("Forms API – existing form", () => {
   test("delete form", async ({ request }) => {
     const response = await new FormsApi(request).delete(HEADERS, formId);
     expect(response.status()).toBe(204);
+    const responseGet = await new FormsApi(request).getOverview(formId);
+    expect(responseGet.status()).toBe(404);
   });
 });

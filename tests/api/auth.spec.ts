@@ -29,7 +29,6 @@ test.describe("Authorization", () => {
       VALID_FORM,
       HEADERS_EMPTY,
     );
-    console.log(response.statusText());
     expect(response.status()).toBe(401);
   });
 });

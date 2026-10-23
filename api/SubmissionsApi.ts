@@ -9,9 +9,11 @@ export class SubmissionsApi {
   }
 
   create(data: object, formId: string) {
-    return this.request.post(`v1/forms/${formId}`, { data });
+    return this.request.post(`/v1/forms/${formId}`, { data });
   }
 
+  // Submissions are saved asynchronously, so a new one may not be listed
+  // right after POST. Poll the list until it shows up.
   async waitForFirstSubmissionId(formId: string) {
     let submissionId: string | undefined;
 
@@ -59,8 +61,7 @@ export class SubmissionsApi {
     );
   }
 
-  // auxiliary methods
-
+  // creates a submission and returns it as saved by the API
   async createAndGet(formId: string, data: object) {
     const createResponse = await this.create(data, formId);
     expect(createResponse.status()).toBe(201);

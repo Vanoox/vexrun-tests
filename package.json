@@ -1,8 +1,7 @@
 {
   "name": "Vexrun",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "API tests for Vexrun Forms written in Playwright + TypeScript",
   "scripts": {
     "test": "playwright test",
     "test:api": "playwright test --project=api",

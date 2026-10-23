@@ -13,22 +13,22 @@ export class FormsApi {
   }
 
   update(data: object, headers: Record<string, string>, formId: string) {
-    return this.request.patch(`v1/forms/${formId}`, { headers, data });
+    return this.request.patch(`/v1/forms/${formId}`, { headers, data });
   }
 
   duplicate(headers: Record<string, string>, formId: string) {
-    return this.request.post(`v1/forms/${formId}/duplicate`, { headers });
+    return this.request.post(`/v1/forms/${formId}/duplicate`, { headers });
   }
 
   getOverview(formId: string) {
-    return this.request.get(`v1/forms/${formId}/overview`);
+    return this.request.get(`/v1/forms/${formId}/overview`);
   }
 
   list(headers: Record<string, string> = HEADERS) {
-    return this.request.get(`v1/forms`, { headers });
+    return this.request.get(`/v1/forms`, { headers });
   }
 
   delete(headers: Record<string, string>, formId: string) {
-    return this.request.delete(`v1/forms/${formId}`, { headers });
+    return this.request.delete(`/v1/forms/${formId}`, { headers });
   }
 }
