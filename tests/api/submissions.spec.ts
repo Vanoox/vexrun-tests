@@ -16,7 +16,6 @@ import { SubmissionsApi } from "../../api/SubmissionsApi.js";
 
 test.describe("Submissions API", () => {
   let formId: string;
-
   test.beforeEach("create form and save id", async ({ request }) => {
     const createFormResponse = await new FormsApi(request).create(VALID_FORM);
     expect(createFormResponse.status()).toBe(201);
@@ -24,51 +23,53 @@ test.describe("Submissions API", () => {
   });
 
   test("create submission", async ({ request }) => {
-    const response = await new SubmissionsApi(request).create(
-      VALID_SUBMISSION,
+    const body = await new SubmissionsApi(request).createAndGet(
       formId,
+      VALID_SUBMISSION,
     );
-    expect(response.status()).toBe(201);
+    expect(body.data).toMatchObject(VALID_SUBMISSION);
   });
 
   test("create submission simple data", async ({ request }) => {
-    const response = await new SubmissionsApi(request).create(
-      SUBMISSION_SIMPLE,
+    const body = await new SubmissionsApi(request).createAndGet(
       formId,
+      SUBMISSION_SIMPLE,
     );
-    expect(response.status()).toBe(201);
+    expect(body.data).toMatchObject(SUBMISSION_SIMPLE);
   });
 
   test("create submission different types", async ({ request }) => {
-    const response = await new SubmissionsApi(request).create(
-      SUBMISSION_DIFFERENT_TYPES,
+    const body = await new SubmissionsApi(request).createAndGet(
       formId,
+      SUBMISSION_DIFFERENT_TYPES,
     );
-    expect(response.status()).toBe(201);
+    expect(body.data).toMatchObject(SUBMISSION_DIFFERENT_TYPES);
   });
 
   test("create submission special chars", async ({ request }) => {
-    const response = await new SubmissionsApi(request).create(
+    const body = await new SubmissionsApi(request).createAndGet(
+      formId,
       SUBMISSION_SPECIAL_CHARS,
-      formId,
     );
-    expect(response.status()).toBe(201);
+    expect(body.data).toMatchObject(SUBMISSION_SPECIAL_CHARS);
   });
 
-  test("create submission field name max lenght", async ({ request }) => {
-    const response = await new SubmissionsApi(request).create(
+  test("create submission field name max length", async ({ request }) => {
+    const body = await new SubmissionsApi(request).createAndGet(
+      formId,
       SUBMISSION_FIELD_NAME_MAX,
-      formId,
     );
-    expect(response.status()).toBe(201);
+    expect(body.data).toMatchObject(SUBMISSION_FIELD_NAME_MAX);
   });
 
-  test("create submission honeypot filled", async ({ request }) => {
-    const response = await new SubmissionsApi(request).create(
-      SUBMISSION_HONEYPOT_FILLED,
-      formId,
-    );
+  test("create submission honeypot filled is not saved", async ({
+    request,
+  }) => {
+    const api = new SubmissionsApi(request);
+    const response = await api.create(SUBMISSION_HONEYPOT_FILLED, formId);
     expect(response.status()).toBe(201);
+    const list = await (await api.list(HEADERS, formId)).json();
+    expect(list.results).toHaveLength(0);
   });
 
   test.describe("existing submission", () => {
@@ -92,9 +93,7 @@ test.describe("Submissions API", () => {
     });
 
     for (const [caseName, data] of Object.entries(LIST_PARAMS_VALID)) {
-      test(`list submissions valid params ${caseName} `, async ({
-        request,
-      }) => {
+      test(`list submissions valid params ${caseName}`, async ({ request }) => {
         const response = await new SubmissionsApi(request).list(
           HEADERS,
           formId,
@@ -105,7 +104,7 @@ test.describe("Submissions API", () => {
     }
 
     for (const [caseName, data] of Object.entries(LIST_PARAMS_INVALID)) {
-      test(`list submissions invalid params ${caseName} `, async ({
+      test(`list submissions invalid params ${caseName}`, async ({
         request,
       }) => {
         const response = await new SubmissionsApi(request).list(
@@ -135,6 +134,12 @@ test.describe("Submissions API", () => {
         submissionId,
       );
       expect(response.status()).toBe(204);
+      const getAfter = await new SubmissionsApi(request).get(
+        HEADERS,
+        formId,
+        submissionId,
+      );
+      expect(getAfter.status()).toBe(404);
     });
   });
 });

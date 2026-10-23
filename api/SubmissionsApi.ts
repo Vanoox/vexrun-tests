@@ -58,4 +58,17 @@ export class SubmissionsApi {
       { headers },
     );
   }
+
+  // auxiliary methods
+
+  async createAndGet(formId: string, data: object) {
+    const createResponse = await this.create(data, formId);
+    expect(createResponse.status()).toBe(201);
+
+    const submissionId = await this.waitForFirstSubmissionId(formId);
+    const getResponse = await this.get(HEADERS, formId, submissionId);
+    expect(getResponse.status()).toBe(200);
+
+    return getResponse.json();
+  }
 }
