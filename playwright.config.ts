@@ -1,11 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
+import { existsSync } from "node:fs";
 
-/**
- * Read environment variables from .env file.
- */
-process.loadEnvFile();
+// no .env on CI, vars come from secrets
+if (existsSync(".env")) process.loadEnvFile();
 
-/* Cookies shared by every UI test (valid ~1 month, refresh values in .env) */
+// cookies expire after ~1 month, refresh in .env
 const sessionCookie = {
   domain: "dev.vexrun.com",
   path: "/",
@@ -15,7 +14,6 @@ const sessionCookie = {
   sameSite: "Lax" as const,
 };
 
-/* Settings shared by every UI project (each one only adds its browser) */
 const uiUse = {
   baseURL: "https://dev.vexrun.com",
   storageState: {
@@ -40,18 +38,16 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Global limit of parallel workers (default would be half of CPU cores) */
   workers: process.env.CI ? 2 : 4,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: "html",
+  reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "html",
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Keep trace only for failed tests. See https://playwright.dev/docs/trace-viewer */
     trace: "retain-on-failure",
   },
 
   projects: [
-    /* API tests – no browser, one at a time (they clean shared data) */
+    // API - one worker, cleanup and tests share the same team
     {
       name: "api-cleanup",
       testDir: "./tests/api",
@@ -66,15 +62,10 @@ export default defineConfig({
       workers: 1,
       use: {
         baseURL: "https://forms.dev.vexrun.com",
-        /* Added to every request made with the `request` fixture */
-        // extraHTTPHeaders: {
-        //   "x-team-id": process.env.X_TEAM_ID_TEST_API!,
-        //   "x-api-key": process.env.X_API_KEY_TEST_API!,
-        // },
       },
     },
 
-    /* UI tests – the same tests run in every browser below */
+    // UI
     {
       name: "ui-chrome",
       testDir: "./tests/ui",

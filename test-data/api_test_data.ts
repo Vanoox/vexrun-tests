@@ -1,6 +1,14 @@
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing env variable: ${name}`);
+  }
+  return value;
+}
+
 export const HEADERS = {
-  "x-team-id": process.env.X_TEAM_ID_TEST_API_TEMPORARY!,
-  "x-api-key": process.env.X_API_KEY_TEST_API_TEMPORARY!,
+  "x-team-id": requireEnv("X_TEAM_ID_TEST_API"),
+  "x-api-key": requireEnv("X_API_KEY_TEST_API"),
 };
 
 // Validation rules from http-api.json:

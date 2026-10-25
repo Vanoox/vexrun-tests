@@ -12,8 +12,7 @@ export class SubmissionsApi {
     return this.request.post(`/v1/forms/${formId}`, { data });
   }
 
-  // Submissions are saved asynchronously, so a new one may not be listed
-  // right after POST. Poll the list until it shows up.
+  // submissions are saved async, poll until the new one shows up
   async waitForFirstSubmissionId(formId: string) {
     let submissionId: string | undefined;
 
