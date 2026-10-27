@@ -1,32 +1,14 @@
-import { defineConfig, devices } from "@playwright/test";
+import { defineConfig } from "@playwright/test";
 import { existsSync } from "node:fs";
 
 // no .env on CI, vars come from secrets
 if (existsSync(".env")) process.loadEnvFile();
 
-// cookies expire after ~1 month, refresh in .env
-const sessionCookie = {
-  domain: "dev.vexrun.com",
-  path: "/",
-  expires: -1,
-  httpOnly: true,
-  secure: true,
-  sameSite: "Lax" as const,
-};
-
-const uiUse = {
-  baseURL: "https://dev.vexrun.com",
-  storageState: {
-    cookies: [
-      { ...sessionCookie, name: "SID", value: process.env.SID! },
-      {
-        ...sessionCookie,
-        name: "last-active-team-id",
-        value: process.env.ACTIVE_TEAM!,
-      },
-    ],
-    origins: [],
-  },
+// no traces for API - they store request headers with the api key,
+// and the report is uploaded as a CI artifact
+const apiUse = {
+  baseURL: "https://forms.dev.vexrun.com",
+  trace: "off" as const,
 };
 
 /**
@@ -52,43 +34,27 @@ export default defineConfig({
       name: "api-cleanup",
       testDir: "./tests/api",
       testMatch: /.*\.setup\.ts/,
-      use: { baseURL: "https://forms.dev.vexrun.com" },
+      use: apiUse,
     },
     {
       name: "api",
       testDir: "./tests/api",
+      testIgnore: /(auth|rate-limit)\.spec\.ts/,
       dependencies: ["api-cleanup"],
       fullyParallel: false,
       workers: 1,
-      use: {
-        baseURL: "https://forms.dev.vexrun.com",
-      },
+      // room for the 60 s rate limit wait
+      timeout: 120_000,
+      use: apiUse,
     },
-
-    // UI
+    // runs last - these can block our IP (auth for 15 min, submissions for 1 min)
     {
-      name: "ui-chrome",
-      testDir: "./tests/ui",
-      fullyParallel: true,
-      use: { ...devices["Desktop Chrome"], channel: "chrome", ...uiUse },
-    },
-    {
-      name: "ui-firefox",
-      testDir: "./tests/ui",
-      fullyParallel: true,
-      use: { ...devices["Desktop Firefox"], ...uiUse },
-    },
-    {
-      name: "ui-webkit",
-      testDir: "./tests/ui",
-      fullyParallel: true,
-      use: { ...devices["Desktop Safari"], ...uiUse },
-    },
-    {
-      name: "ui-edge",
-      testDir: "./tests/ui",
-      fullyParallel: true,
-      use: { ...devices["Desktop Edge"], channel: "msedge", ...uiUse },
+      name: "api-limits",
+      testDir: "./tests/api",
+      testMatch: /(auth|rate-limit)\.spec\.ts/,
+      dependencies: ["api"],
+      workers: 1,
+      use: apiUse,
     },
   ],
 });

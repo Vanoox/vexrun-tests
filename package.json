@@ -4,12 +4,7 @@
   "description": "API tests for Vexrun Forms written in Playwright + TypeScript",
   "scripts": {
     "test": "playwright test",
-    "test:api": "playwright test --project=api",
-    "test:ui": "playwright test --project=ui-chrome --project=ui-firefox --project=ui-webkit --project=ui-edge",
-    "test:ui:chrome": "playwright test --project=ui-chrome",
-    "test:ui:firefox": "playwright test --project=ui-firefox",
-    "test:ui:webkit": "playwright test --project=ui-webkit",
-    "test:ui:edge": "playwright test --project=ui-edge",
+    "test:api": "playwright test --project=api --project=api-limits",
     "report": "playwright show-report"
   },
   "keywords": [],

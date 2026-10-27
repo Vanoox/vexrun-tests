@@ -71,33 +71,50 @@ export const FORM_SPECIAL_CHARS = {
   success_message: `Cudzysłowy "test", apostrof 'test' i <b>HTML</b>`,
 };
 
-// each case breaks one field -> 400
+// each case breaks one field -> 400 with that field in errors
+function invalidForm<K extends keyof typeof VALID_FORM>(
+  field: K,
+  value: unknown,
+) {
+  return { field, data: { ...VALID_FORM, [field]: value } };
+}
+
 export const INVALID_FORMS = {
-  nameTooShort: { ...VALID_FORM, name: "A" },
-  nameTooLong: { ...VALID_FORM, name: "N".repeat(51) },
-  nameNotString: { ...VALID_FORM, name: 12345 },
-  isEnabledAsString: { ...VALID_FORM, is_enabled: "true" },
-  limitZero: { ...VALID_FORM, limit: 0 },
-  limitNegative: { ...VALID_FORM, limit: -5 },
-  limitTooBig: { ...VALID_FORM, limit: 100_000_001 },
-  limitDecimal: { ...VALID_FORM, limit: 10.5 },
-  limitAsString: { ...VALID_FORM, limit: "20" },
-  honeypotEmpty: { ...VALID_FORM, honeypot_field: "" },
-  honeypotTooLong: { ...VALID_FORM, honeypot_field: "h".repeat(101) },
-  redirectUrlInvalid: { ...VALID_FORM, redirect_url: "to-nie-jest-url" },
-  redirectUrlTooLong: {
-    ...VALID_FORM,
-    redirect_url: "https://example.com/" + "a".repeat(2000),
-  },
-  successTitleTooShort: { ...VALID_FORM, success_title: "S" },
-  successTitleTooLong: { ...VALID_FORM, success_title: "T".repeat(51) },
-  successMessageTooShort: { ...VALID_FORM, success_message: "M" },
-  successMessageTooLong: { ...VALID_FORM, success_message: "M".repeat(201) },
+  nameTooShort: invalidForm("name", "A"),
+  nameTooLong: invalidForm("name", "N".repeat(51)),
+  nameNotString: invalidForm("name", 12345),
+  isEnabledAsString: invalidForm("is_enabled", "true"),
+  limitZero: invalidForm("limit", 0),
+  limitNegative: invalidForm("limit", -5),
+  limitTooBig: invalidForm("limit", 100_000_001),
+  limitDecimal: invalidForm("limit", 10.5),
+  limitAsString: invalidForm("limit", "20"),
+  honeypotEmpty: invalidForm("honeypot_field", ""),
+  honeypotTooLong: invalidForm("honeypot_field", "h".repeat(101)),
+  redirectUrlInvalid: invalidForm("redirect_url", "to-nie-jest-url"),
+  redirectUrlTooLong: invalidForm(
+    "redirect_url",
+    "https://example.com/" + "a".repeat(2000),
+  ),
+  successTitleTooShort: invalidForm("success_title", "S"),
+  successTitleTooLong: invalidForm("success_title", "T".repeat(51)),
+  successMessageTooShort: invalidForm("success_message", "M"),
+  successMessageTooLong: invalidForm("success_message", "M".repeat(201)),
 };
 
 export const FORM_MISSING_FIELDS = {
   name: "Tylko nazwa",
 };
+
+// everything except name
+export const FORM_MISSING_FIELDS_ERRORS = [
+  "is_enabled",
+  "limit",
+  "honeypot_field",
+  "redirect_url",
+  "success_title",
+  "success_message",
+];
 
 export const FORM_EMPTY = {};
 
@@ -128,8 +145,9 @@ export const UPDATE_CLEAR_OPTIONAL = {
   redirect_url: null,
 };
 
-// the API rejects an empty PATCH -> 400
+// the API rejects an empty PATCH -> 400, no errors list
 export const UPDATE_EMPTY = {};
+export const UPDATE_EMPTY_MESSAGE = "No fields to update";
 
 export const UPDATE_INVALID = {
   name: "A",
@@ -230,6 +248,14 @@ export const SUBMISSION_ERRORS = {
   noData: "no_data",
   rateLimit: "rate_limit",
 };
+
+// 15 submissions/min per IP, then 422 rate_limit for 60 s
+export const RATE_LIMIT = {
+  perMinute: 15,
+  waitMs: 61_000,
+};
+
+export const FORM_NOT_FOUND_MESSAGE = "Form not found";
 
 // --- IDs ---
 

@@ -1,10 +1,11 @@
-import { test as setup, expect } from "@playwright/test";
+import { test as setup } from "@playwright/test";
 import { HEADERS } from "../../test-data/api_test_data.js";
 import { FormsApi } from "../../api/FormsApi.js";
+import { expectStatus } from "../../api/expectations.js";
 
 setup("delete all forms", async ({ request }) => {
   const listResponse = await new FormsApi(request).list(HEADERS);
-  expect(listResponse.status()).toBe(200);
+  await expectStatus(listResponse, 200);
 
   const body = await listResponse.json();
   const forms = Array.isArray(body) ? body : body.data;
@@ -12,6 +13,6 @@ setup("delete all forms", async ({ request }) => {
 
   for (const formId of formIds) {
     const deleteResponse = await new FormsApi(request).delete(HEADERS, formId);
-    expect(deleteResponse.status()).toBe(204);
+    await expectStatus(deleteResponse, 204);
   }
 });

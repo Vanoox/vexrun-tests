@@ -1,34 +1,28 @@
-import type { APIRequestContext } from "@playwright/test";
 import { HEADERS } from "../test-data/api_test_data.js";
+import { BaseApi } from "./BaseApi.js";
 
-export class FormsApi {
-  request: APIRequestContext;
-
-  constructor(request: APIRequestContext) {
-    this.request = request;
-  }
-
+export class FormsApi extends BaseApi {
   create(data: object, headers: Record<string, string> = HEADERS) {
-    return this.request.post("/v1/forms", { headers, data });
+    return this.send("POST", "/v1/forms", { headers, data });
   }
 
   update(data: object, headers: Record<string, string>, formId: string) {
-    return this.request.patch(`/v1/forms/${formId}`, { headers, data });
+    return this.send("PATCH", `/v1/forms/${formId}`, { headers, data });
   }
 
   duplicate(headers: Record<string, string>, formId: string) {
-    return this.request.post(`/v1/forms/${formId}/duplicate`, { headers });
+    return this.send("POST", `/v1/forms/${formId}/duplicate`, { headers });
   }
 
   getOverview(formId: string) {
-    return this.request.get(`/v1/forms/${formId}/overview`);
+    return this.send("GET", `/v1/forms/${formId}/overview`);
   }
 
   list(headers: Record<string, string> = HEADERS) {
-    return this.request.get(`/v1/forms`, { headers });
+    return this.send("GET", "/v1/forms", { headers });
   }
 
   delete(headers: Record<string, string>, formId: string) {
-    return this.request.delete(`/v1/forms/${formId}`, { headers });
+    return this.send("DELETE", `/v1/forms/${formId}`, { headers });
   }
 }

@@ -1,15 +1,31 @@
-import { expect, type APIRequestContext } from "@playwright/test";
-import { HEADERS } from "../test-data/api_test_data.js";
+import { expect, type APIResponse } from "@playwright/test";
+import {
+  HEADERS,
+  RATE_LIMIT,
+  SUBMISSION_ERRORS,
+} from "../test-data/api_test_data.js";
+import { BaseApi } from "./BaseApi.js";
+import { expectStatus } from "./expectations.js";
 
-export class SubmissionsApi {
-  request: APIRequestContext;
-
-  constructor(request: APIRequestContext) {
-    this.request = request;
+export class SubmissionsApi extends BaseApi {
+  // on rate_limit waits a minute and tries once more,
+  // rate-limit.spec.ts turns this off to get the error itself
+  async create(
+    data: object,
+    formId: string,
+    { waitOnRateLimit = true } = {},
+  ) {
+    const response = await this.post(data, formId);
+    if (!waitOnRateLimit || !(await isRateLimited(response))) {
+      return response;
+    }
+    console.warn(`rate_limit hit, retrying in ${RATE_LIMIT.waitMs / 1000}s`);
+    await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT.waitMs));
+    return this.post(data, formId);
   }
 
-  create(data: object, formId: string) {
-    return this.request.post(`/v1/forms/${formId}`, { data });
+  private post(data: object, formId: string) {
+    return this.send("POST", `/v1/forms/${formId}`, { data });
   }
 
   // submissions are saved async, poll until the new one shows up
@@ -20,7 +36,7 @@ export class SubmissionsApi {
       .poll(
         async () => {
           const listResponse = await this.list(HEADERS, formId);
-          expect(listResponse.status()).toBe(200);
+          await expectStatus(listResponse, 200);
           const body = await listResponse.json();
           submissionId = body.results[0]?.id;
           return submissionId;
@@ -33,9 +49,11 @@ export class SubmissionsApi {
   }
 
   get(headers: Record<string, string>, formId: string, submissionId: string) {
-    return this.request.get(`/v1/forms/${formId}/submissions/${submissionId}`, {
-      headers,
-    });
+    return this.send(
+      "GET",
+      `/v1/forms/${formId}/submissions/${submissionId}`,
+      { headers },
+    );
   }
 
   list(
@@ -43,7 +61,7 @@ export class SubmissionsApi {
     formId: string,
     params?: Record<string, string | number>,
   ) {
-    return this.request.get(`/v1/forms/${formId}/submissions`, {
+    return this.send("GET", `/v1/forms/${formId}/submissions`, {
       headers,
       params: params ?? {},
     });
@@ -54,21 +72,29 @@ export class SubmissionsApi {
     formId: string,
     submissionId: string,
   ) {
-    return this.request.delete(
+    return this.send(
+      "DELETE",
       `/v1/forms/${formId}/submissions/${submissionId}`,
       { headers },
     );
   }
 
-  // creates a submission and returns it as saved by the API
-  async createAndGet(formId: string, data: object) {
+  async createAndWait(formId: string, data: object) {
     const createResponse = await this.create(data, formId);
-    expect(createResponse.status()).toBe(201);
+    await expectStatus(createResponse, 201);
+    return this.waitForFirstSubmissionId(formId);
+  }
 
-    const submissionId = await this.waitForFirstSubmissionId(formId);
+  async createAndGet(formId: string, data: object) {
+    const submissionId = await this.createAndWait(formId, data);
     const getResponse = await this.get(HEADERS, formId, submissionId);
-    expect(getResponse.status()).toBe(200);
-
+    await expectStatus(getResponse, 200);
     return getResponse.json();
   }
+}
+
+async function isRateLimited(response: APIResponse) {
+  if (response.status() !== 422) return false;
+  const body = await response.json();
+  return body.error === SUBMISSION_ERRORS.rateLimit;
 }
