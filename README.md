@@ -10,7 +10,7 @@ Automated API tests for the Vexrun Forms service (forms, submissions, analytics,
 - validation: 19 invalid cases, each breaking exactly one field, plus missing required fields (400); the `errors` list must point at exactly the broken fields
 - partial updates (PATCH): the change is read back from the list, unchanged fields keep their values, invalid and empty updates are rejected
 - overview status after enabling and disabling a form (`open`, `form_disabled`)
-- duplicating (new id, same config), listing and deleting (a deleted form returns 404 and is gone from the list)
+- duplicating (new id, whole config copied, submissions not copied), listing and deleting (a deleted form returns 404 and is gone from the list)
 - 404 for a nonexistent and a malformed id on every form endpoint
 
 **Analytics** (`/v1/forms/{id}/analytics`)
@@ -20,6 +20,7 @@ Automated API tests for the Vexrun Forms service (forms, submissions, analytics,
 **Submissions** (`/v1/forms/{id}`, `/v1/forms/{id}/submissions`)
 - JSON submissions with different data types, nested objects, special characters, HTML/SQL strings, max field name length and max number of fields; the stored data is read back and compared
 - the success response (`success_title`, `success_message`, `redirect_url`)
+- `Referer` and `User-Agent` are saved with the submission
 - `multipart/form-data`: 303 redirect without `Accept`, 201 with `Accept: application/json`, the `$` field with JSON data
 - `Accept: text/html` on an error: 303 to `redirect_url` with `error` and `message` in the query
 - honeypot: a bot submission returns 201 but is not saved
@@ -27,6 +28,13 @@ Automated API tests for the Vexrun Forms service (forms, submissions, analytics,
 - rate limit: more than 15 submissions per minute returns 422 `rate_limit`
 - list: pagination (`limit`/`offset` and `cursor`), sorting by `created_at`, case-insensitive search, invalid params (400)
 - getting and deleting a submission (a deleted submission returns 404), 404 for unknown ids
+- deleting a form deletes its submissions
+
+**Files** (`/v1/forms/{id}/submissions/{id}/files/{id}`)
+- uploading a file with multipart: file metadata in the submission, downloading it and comparing the content
+- the download is named after the field, the original file name is not saved
+- max 10 files per submission, 11 returns 413
+- 404 for unknown file ids, deleting a submission deletes its files
 
 **Authorization** (nightly only)
 - wrong API key, wrong team ID and missing headers (401)

@@ -11,7 +11,6 @@ type ApiFixtures = {
 };
 
 export const test = base.extend<ApiFixtures>({
-  // deletes every form created in the test, also when the test fails
   formsApi: async ({ request }, use) => {
     const formsApi = new FormsApi(request);
     await use(formsApi);

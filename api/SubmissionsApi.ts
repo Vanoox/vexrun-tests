@@ -10,9 +10,13 @@ import type { Submission, SubmissionList } from "./types.js";
 
 type Headers = Record<string, string>;
 
+export type FilePayload = { name: string; mimeType: string; buffer: Buffer };
+
 type CreateOptions = {
   // "text/html" makes the API answer with a 303 redirect
   accept?: string;
+  // e.g. referer, user-agent
+  headers?: Headers;
   // rate-limit.spec.ts turns this off to get the error itself
   waitOnRateLimit?: boolean;
 };
@@ -26,6 +30,7 @@ export class SubmissionsApi extends BaseApi {
         headers: {
           "content-type": "application/json",
           ...acceptHeader(options.accept),
+          ...options.headers,
         },
         data: typeof data === "string" ? Buffer.from(data) : data,
         maxRedirects: 0,
@@ -35,12 +40,12 @@ export class SubmissionsApi extends BaseApi {
 
   createMultipart(
     formId: string,
-    fields: Record<string, string>,
+    fields: Record<string, string | FilePayload>,
     options: CreateOptions = {},
   ) {
     return this.withRateLimitRetry(options, () =>
       this.send("POST", `/v1/forms/${formId}`, {
-        headers: acceptHeader(options.accept),
+        headers: { ...acceptHeader(options.accept), ...options.headers },
         multipart: fields,
         maxRedirects: 0,
       }),
@@ -51,6 +56,19 @@ export class SubmissionsApi extends BaseApi {
     return this.send(
       "GET",
       `/v1/forms/${formId}/submissions/${submissionId}`,
+      { headers },
+    );
+  }
+
+  getFile(
+    formId: string,
+    submissionId: string,
+    fileId: string,
+    headers: Headers = HEADERS,
+  ) {
+    return this.send(
+      "GET",
+      `/v1/forms/${formId}/submissions/${submissionId}/files/${fileId}`,
       { headers },
     );
   }

@@ -23,6 +23,7 @@ import {
   ANALYTICS_RANGE_DAYS,
   ANALYTICS_RANGE_REVERSED,
   ANALYTICS_PARAMS_INVALID,
+  SUBMISSION_SIMPLE,
 } from "../../test-data/api_test_data.js";
 import type { FormsApi } from "../../api/FormsApi.js";
 import type { FormOverview } from "../../api/types.js";
@@ -135,7 +136,6 @@ test.describe("Forms API – existing form", () => {
   test("update form too short name", async ({ formsApi, form }) => {
     const response = await formsApi.update(form.id, UPDATE_INVALID);
     await expectValidationError(response, ["name"]);
-    // nothing should change after a rejected update
     expect(await formsApi.findInList(form.id)).toMatchObject(VALID_FORM);
   });
 
@@ -159,6 +159,26 @@ test.describe("Forms API – existing form", () => {
     expect(copy).toMatchObject(VALID_FORM);
     expect(copy.id).not.toBe(form.id);
     expect(await formsApi.findInList(copy.id)).toMatchObject(VALID_FORM);
+  });
+
+  test("duplicate form copies its whole config", async ({ formsApi }) => {
+    const original = await formsApi.createOrFail(EDITED_FORM);
+    const response = await formsApi.duplicate(original.id);
+    await expectStatus(response, 201);
+    expect(await response.json()).toMatchObject(EDITED_FORM);
+  });
+
+  test("duplicate form does not copy submissions", async ({
+    formsApi,
+    submissionsApi,
+    form,
+  }) => {
+    await submissionsApi.createAndWait(form.id, SUBMISSION_SIMPLE);
+
+    const response = await formsApi.duplicate(form.id);
+    await expectStatus(response, 201);
+    const copy = await response.json();
+    expect((await submissionsApi.listOrFail(copy.id)).total).toBe(0);
   });
 
   test("list forms", async ({ formsApi, form }) => {
@@ -206,7 +226,6 @@ test.describe("Forms API – analytics", () => {
     expect(days.map((day: { date: string }) => day.date)).toEqual(
       ANALYTICS_RANGE_DAYS,
     );
-    // new form, no submissions in that range
     expect(days[0]).toEqual({
       date: ANALYTICS_RANGE_DAYS[0],
       hours: {},

@@ -11,6 +11,15 @@ import {
   SUBMISSION_MULTIPART,
   SUBMISSION_MULTIPART_JSON_DATA,
   SUBMISSION_MULTIPART_WITH_JSON,
+  SUBMISSION_REQUEST_HEADERS,
+  SUBMISSION_WITH_FILE,
+  SUBMISSION_FILE,
+  SUBMISSION_FILE_METADATA,
+  SUBMISSION_FILE_CONTENT,
+  SUBMISSION_MAX_FILES,
+  SUBMISSION_TOO_MANY_FILES,
+  FILE_COUNT_LIMIT_MESSAGE,
+  FILE_NOT_FOUND_MESSAGE,
   SUBMISSION_HONEYPOT_FILLED,
   SUBMISSION_EMPTY,
   SUBMISSION_ARRAY,
@@ -82,11 +91,25 @@ test.describe("Submissions API – create", () => {
     });
   });
 
+  test("create submission saves referer and user agent", async ({
+    submissionsApi,
+    form,
+  }) => {
+    const response = await submissionsApi.create(form.id, SUBMISSION_SIMPLE, {
+      headers: SUBMISSION_REQUEST_HEADERS,
+    });
+    await expectStatus(response, 201);
+    const [submission] = await submissionsApi.waitForSubmissions(form.id, 1);
+    expect(submission).toMatchObject({
+      referer: SUBMISSION_REQUEST_HEADERS.referer,
+      user_agent: SUBMISSION_REQUEST_HEADERS["user-agent"],
+    });
+  });
+
   test("create submission as multipart redirects to redirect_url", async ({
     submissionsApi,
     form,
   }) => {
-    // no Accept header + multipart -> 303
     const response = await submissionsApi.createMultipart(
       form.id,
       SUBMISSION_MULTIPART,
@@ -189,7 +212,6 @@ test.describe("Submissions API – create", () => {
       accept: "text/html",
     });
     expect(response.status()).toBe(303);
-    // errors redirect too, with ?error=...&message=... added
     const location = new URL(response.headers()["location"]!);
     expect(location.origin + location.pathname).toBe(VALID_FORM.redirect_url);
     expect(location.searchParams.get("error")).toBe(
@@ -395,6 +417,99 @@ test.describe("Submissions API – list and get", () => {
   });
 });
 
+test.describe("Submissions API – files", () => {
+  let request: APIRequestContext;
+  let formsApi: FormsApi;
+  let formId: string;
+  let submission: Submission;
+
+  test.beforeAll(
+    "create form with a file submission",
+    async ({ playwright }, testInfo) => {
+      request = await playwright.request.newContext({
+        baseURL: testInfo.project.use.baseURL!,
+      });
+      formsApi = new FormsApi(request);
+      const submissionsApi = new SubmissionsApi(request);
+
+      formId = (await formsApi.createOrFail(VALID_FORM)).id;
+      const response = await submissionsApi.createMultipart(
+        formId,
+        SUBMISSION_WITH_FILE,
+        { accept: "application/json" },
+      );
+      await expectStatus(response, 201);
+      submission = (await submissionsApi.waitForSubmissions(formId, 1))[0]!;
+    },
+  );
+
+  test.afterAll(async () => {
+    await formsApi.deleteCreated();
+    await request.dispose();
+  });
+
+  test("create submission with file", async () => {
+    expect(submission.data).toEqual({
+      firstName: SUBMISSION_WITH_FILE.firstName,
+    });
+    expect(submission.files).toEqual([
+      { id: expect.any(String), ...SUBMISSION_FILE_METADATA },
+    ]);
+  });
+
+  test("download submission file", async ({ submissionsApi }) => {
+    const response = await submissionsApi.getFile(
+      formId,
+      submission.id,
+      submission.files[0]!.id,
+    );
+    await expectStatus(response, 200);
+    expect(await response.text()).toBe(SUBMISSION_FILE_CONTENT);
+    expect(response.headers()["content-type"]).toContain(
+      SUBMISSION_FILE.mimeType,
+    );
+    // original file names are not saved, the download is named after the field
+    const disposition = response.headers()["content-disposition"];
+    expect(disposition).toContain(`${SUBMISSION_FILE_METADATA.field_name}.txt`);
+    expect(disposition).not.toContain(SUBMISSION_FILE.name);
+  });
+
+  for (const [idName, id] of Object.entries(NOT_FOUND_IDS)) {
+    test(`download file with ${idName} id`, async ({ submissionsApi }) => {
+      const response = await submissionsApi.getFile(formId, submission.id, id);
+      await expectApiError(response, 404, FILE_NOT_FOUND_MESSAGE);
+    });
+  }
+
+  test("create submission with max number of files", async ({
+    submissionsApi,
+    form,
+  }) => {
+    const response = await submissionsApi.createMultipart(
+      form.id,
+      SUBMISSION_MAX_FILES,
+      { accept: "application/json" },
+    );
+    await expectStatus(response, 201);
+    const [saved] = await submissionsApi.waitForSubmissions(form.id, 1);
+    expect(saved!.files.map((file) => file.field_name).sort()).toEqual(
+      Object.keys(SUBMISSION_MAX_FILES).sort(),
+    );
+  });
+
+  test("create submission with too many files", async ({
+    submissionsApi,
+    form,
+  }) => {
+    const response = await submissionsApi.createMultipart(
+      form.id,
+      SUBMISSION_TOO_MANY_FILES,
+      { accept: "application/json" },
+    );
+    await expectApiError(response, 413, FILE_COUNT_LIMIT_MESSAGE);
+  });
+});
+
 test.describe("Submissions API – delete", () => {
   test("delete submission", async ({ submissionsApi, form }) => {
     const submissionId = await submissionsApi.createAndWait(
@@ -408,5 +523,42 @@ test.describe("Submissions API – delete", () => {
     const getAfter = await submissionsApi.get(form.id, submissionId);
     await expectApiError(getAfter, 404, SUBMISSION_NOT_FOUND_MESSAGE);
     expect((await submissionsApi.listOrFail(form.id)).total).toBe(0);
+  });
+
+  test("delete submission deletes its files", async ({
+    submissionsApi,
+    form,
+  }) => {
+    const response = await submissionsApi.createMultipart(
+      form.id,
+      SUBMISSION_WITH_FILE,
+      { accept: "application/json" },
+    );
+    await expectStatus(response, 201);
+    const [submission] = await submissionsApi.waitForSubmissions(form.id, 1);
+    const fileId = submission!.files[0]!.id;
+
+    const deleteResponse = await submissionsApi.delete(form.id, submission!.id);
+    await expectStatus(deleteResponse, 204);
+
+    const file = await submissionsApi.getFile(form.id, submission!.id, fileId);
+    await expectApiError(file, 404, SUBMISSION_NOT_FOUND_MESSAGE);
+  });
+
+  test("delete form deletes its submissions", async ({
+    formsApi,
+    submissionsApi,
+    form,
+  }) => {
+    const submissionId = await submissionsApi.createAndWait(
+      form.id,
+      SUBMISSION_SIMPLE,
+    );
+
+    const response = await formsApi.delete(form.id);
+    await expectStatus(response, 204);
+
+    const getAfter = await submissionsApi.get(form.id, submissionId);
+    await expectApiError(getAfter, 404, FORM_NOT_FOUND_MESSAGE);
   });
 });

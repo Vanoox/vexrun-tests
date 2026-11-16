@@ -14,7 +14,7 @@ const apiUse = {
 export default defineConfig({
   testDir: "./tests/api",
   forbidOnly: !!process.env.CI,
-  // one retry is enough, more would hide flaky tests and hit the rate limit
+  // more retries would hit the rate limit
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "html",
   use: apiUse,

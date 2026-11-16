@@ -244,6 +244,11 @@ export const SUBMISSION_MULTIPART_WITH_JSON = {
   $: JSON.stringify(SUBMISSION_MULTIPART_JSON_DATA),
 };
 
+export const SUBMISSION_REQUEST_HEADERS = {
+  referer: "https://example.com/contact",
+  "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) vexrun-tests",
+};
+
 // fills the VALID_FORM honeypot -> 201, but the submission is not saved
 export const SUBMISSION_HONEYPOT_FILLED = {
   firstName: "Bot",
@@ -274,6 +279,47 @@ export const SUBMISSION_TOO_MANY_FIELDS: Record<string, number> = {};
 for (let i = 1; i <= 1001; i++) {
   SUBMISSION_TOO_MANY_FIELDS[`field${i}`] = i;
 }
+
+// --- Files ---
+
+const FILE_CONTENT = "Hello from the file upload test";
+
+export const SUBMISSION_FILE = {
+  name: "notes.txt",
+  mimeType: "text/plain",
+  buffer: Buffer.from(FILE_CONTENT),
+};
+
+export const SUBMISSION_WITH_FILE = {
+  firstName: "Anna",
+  cv: SUBMISSION_FILE,
+};
+
+export const SUBMISSION_FILE_METADATA = {
+  field_name: "cv",
+  size: Buffer.byteLength(FILE_CONTENT),
+  mime_type: "text/plain",
+  ext: ".txt",
+};
+export const SUBMISSION_FILE_CONTENT = FILE_CONTENT;
+
+function textFiles(count: number) {
+  const files: Record<string, typeof SUBMISSION_FILE> = {};
+  for (let i = 1; i <= count; i++) {
+    files[`file${i}`] = {
+      name: `file${i}.txt`,
+      mimeType: "text/plain",
+      buffer: Buffer.from(`file ${i}`),
+    };
+  }
+  return files;
+}
+
+// max 10 files per submission, 11 -> 413
+export const SUBMISSION_MAX_FILES = textFiles(10);
+export const SUBMISSION_TOO_MANY_FILES = textFiles(11);
+export const FILE_COUNT_LIMIT_MESSAGE = "File count limit exceeded";
+export const FILE_NOT_FOUND_MESSAGE = "File not found";
 
 // values of the "error" field returned with 422
 export const SUBMISSION_ERRORS = {

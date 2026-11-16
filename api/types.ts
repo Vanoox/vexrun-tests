@@ -1,4 +1,4 @@
-// response shapes from http-api.json (only what the tests use)
+// response shapes from http-api.json
 
 export type Form = {
   id: string;
@@ -28,8 +28,16 @@ export type Submission = {
   user_agent: string;
   referer: string;
   data: Record<string, unknown>;
-  files: unknown[];
+  files: SubmissionFile[];
   created_at: number;
+};
+
+export type SubmissionFile = {
+  id: string;
+  field_name: string;
+  size: number;
+  mime_type: string;
+  ext: string;
 };
 
 export type SubmissionList = {
