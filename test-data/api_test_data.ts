@@ -21,24 +21,24 @@ export const HEADERS = {
 
 // limit 100 so the submission tests don't use it up
 export const VALID_FORM = {
-  name: "Formularz kontaktowy",
+  name: "Contact form",
   is_enabled: true,
   limit: 100,
   honeypot_field: "bot_trap_field",
-  redirect_url: "https://example.com/dziekujemy",
-  success_title: "Dziękujemy!",
-  success_message: "Otrzymaliśmy Twoją wiadomość. Odpowiemy w ciągu 24 godzin.",
+  redirect_url: "https://example.com/thank-you",
+  success_title: "Thank you!",
+  success_message: "We got your message and will reply within 24 hours.",
 };
 
 // every field differs from VALID_FORM
 export const EDITED_FORM = {
-  name: "Formularz kontaktowy – edytowany",
+  name: "Contact form – edited",
   is_enabled: false,
   limit: 50,
   honeypot_field: "hidden_spam_input",
-  redirect_url: "https://example.com/wyslano",
-  success_title: "Wysłano!",
-  success_message: "Wiadomość została wysłana.",
+  redirect_url: "https://example.com/sent",
+  success_title: "Sent!",
+  success_message: "Your message has been sent.",
 };
 
 export const FORM_MIN_VALUES = {
@@ -56,19 +56,19 @@ export const FORM_MAX_VALUES = {
   is_enabled: true,
   limit: 100_000_000,
   honeypot_field: "h".repeat(100),
-  redirect_url: "https://example.com/dziekujemy",
+  redirect_url: "https://example.com/thank-you",
   success_title: "T".repeat(50),
   success_message: "M".repeat(200),
 };
 
 export const FORM_SPECIAL_CHARS = {
-  name: "Zażółć gęślą jaźń 🚀",
+  name: "Ünïcödé ąęółż 日本語 🚀",
   is_enabled: true,
   limit: null,
   honeypot_field: null,
   redirect_url: null,
-  success_title: "Dzięki! ✅",
-  success_message: `Cudzysłowy "test", apostrof 'test' i <b>HTML</b>`,
+  success_title: "Thanks! ✅",
+  success_message: `Double quotes "test", apostrophe 'test' and <b>HTML</b>`,
 };
 
 // each case breaks one field -> 400 with that field in errors
@@ -83,7 +83,9 @@ export const INVALID_FORMS = {
   nameTooShort: invalidForm("name", "A"),
   nameTooLong: invalidForm("name", "N".repeat(51)),
   nameNotString: invalidForm("name", 12345),
+  nameNull: invalidForm("name", null),
   isEnabledAsString: invalidForm("is_enabled", "true"),
+  isEnabledNull: invalidForm("is_enabled", null),
   limitZero: invalidForm("limit", 0),
   limitNegative: invalidForm("limit", -5),
   limitTooBig: invalidForm("limit", 100_000_001),
@@ -91,7 +93,7 @@ export const INVALID_FORMS = {
   limitAsString: invalidForm("limit", "20"),
   honeypotEmpty: invalidForm("honeypot_field", ""),
   honeypotTooLong: invalidForm("honeypot_field", "h".repeat(101)),
-  redirectUrlInvalid: invalidForm("redirect_url", "to-nie-jest-url"),
+  redirectUrlInvalid: invalidForm("redirect_url", "not-a-url"),
   redirectUrlTooLong: invalidForm(
     "redirect_url",
     "https://example.com/" + "a".repeat(2000),
@@ -103,7 +105,7 @@ export const INVALID_FORMS = {
 };
 
 export const FORM_MISSING_FIELDS = {
-  name: "Tylko nazwa",
+  name: "Name only",
 };
 
 // everything except name
@@ -116,21 +118,21 @@ export const FORM_MISSING_FIELDS_ERRORS = [
   "success_message",
 ];
 
-export const FORM_EMPTY = {};
+// the API generates these itself and ignores them in the body
+export const FORM_READ_ONLY_FIELDS = {
+  id: "000000000000000000000000",
+  created_at: 1,
+};
 
 // --- Updates (PATCH) ---
 
 export const UPDATE_ONLY_NAME = {
-  name: "Tylko nowa nazwa",
+  name: "New name only",
 };
 
 // submitting to a disabled form -> 422 form_disabled
 export const UPDATE_DISABLE_FORM = {
   is_enabled: false,
-};
-
-export const UPDATE_ENABLE_FORM = {
-  is_enabled: true,
 };
 
 // second submission -> 422 submission_limit_reached
@@ -157,12 +159,12 @@ export const UPDATE_INVALID = {
 
 export const HEADERS_WRONG_API_KEY = {
   ...HEADERS,
-  "x-api-key": "zly-klucz-api-123",
+  "x-api-key": "wrong-api-key-123",
 };
 
 export const HEADERS_WRONG_TEAM_ID = {
   ...HEADERS,
-  "x-team-id": "zly-team-id-123",
+  "x-team-id": "wrong-team-id-123",
 };
 
 export const HEADERS_EMPTY = {};
@@ -171,74 +173,106 @@ export const HEADERS_EMPTY = {};
 // The API accepts any fields and stores them as sent.
 
 export const VALID_SUBMISSION = {
-  imie: "Anna",
-  nazwisko: "Kowalska",
-  email: "anna.kowalska@example.com",
-  telefon: "+48 601 234 567",
-  temat: "Pytanie o ofertę",
-  wiadomosc: "Dzień dobry, proszę o wycenę kuchni na wymiar.",
-  budzetPLN: 15000.5,
-  zgodaRodo: true,
-  firma: null,
-  preferowanyKontakt: ["email", "telefon"],
-  adres: {
-    miasto: "Warszawa",
-    kodPocztowy: "00-123",
+  firstName: "Anna",
+  lastName: "Smith",
+  email: "anna.smith@example.com",
+  phone: "+48 601 234 567",
+  subject: "Pricing question",
+  message: "Hello, could you send me a quote for a custom kitchen?",
+  budget: 15000.5,
+  privacyConsent: true,
+  company: null,
+  preferredContact: ["email", "phone"],
+  address: {
+    city: "Warsaw",
+    postalCode: "00-123",
   },
 };
 
+// different from VALID_SUBMISSION, so search can tell them apart
 export const SUBMISSION_SIMPLE = {
-  imie: "Jan",
-  email: "jan.nowak@example.com",
-  wiadomosc: "Dzień dobry, mam pytanie.",
+  firstName: "John",
+  email: "john.doe@example.com",
+  message: "Hello, I have a question.",
 };
 
 export const SUBMISSION_DIFFERENT_TYPES = {
-  imie: "Ewa",
-  wiek: 30,
-  ocena: 4.5,
-  zgodaNaNewsletter: true,
-  drugieImie: null,
-  tagi: ["wsparcie", "faktury"],
-  adres: { miasto: "Kraków", kraj: "Polska" },
+  firstName: "Eve",
+  age: 30,
+  rating: 4.5,
+  newsletter: true,
+  middleName: null,
+  tags: ["support", "billing"],
+  address: { city: "Krakow", country: "Poland" },
 };
 
 export const SUBMISSION_SPECIAL_CHARS = {
-  polskieZnaki: "Zażółć gęślą jaźń ĄĆĘŁŃÓŚŹŻ",
+  unicode: "Ünïcödé ąęółż ĄĆĘŁŃÓŚŹŻ 日本語",
   emoji: "😀🔥✅",
   html: "<script>alert('xss')</script>",
   sql: "'; DROP TABLE users; --",
-  nowaLinia: "linia 1\nlinia 2",
+  newLine: "line 1\nline 2",
 };
 
 // field name: 100 chars (max)
 export const SUBMISSION_FIELD_NAME_MAX = {
-  ["p".repeat(100)]: "wartość",
+  ["f".repeat(100)]: "value",
+};
+
+// 1000 fields - the max
+export const SUBMISSION_MAX_FIELDS: Record<string, number> = {};
+for (let i = 1; i <= 1000; i++) {
+  SUBMISSION_MAX_FIELDS[`field${i}`] = i;
+}
+
+// multipart/form-data - values are always strings
+export const SUBMISSION_MULTIPART = {
+  firstName: "Olivia",
+  email: "olivia@example.com",
+  message: "Sent as multipart/form-data",
+};
+
+// "$" with a JSON string replaces all other non-file fields
+export const SUBMISSION_MULTIPART_JSON_DATA = {
+  firstName: "Peter",
+  age: 41,
+  address: { city: "Gdansk" },
+};
+
+export const SUBMISSION_MULTIPART_WITH_JSON = {
+  ignored: "this field should not be saved",
+  $: JSON.stringify(SUBMISSION_MULTIPART_JSON_DATA),
 };
 
 // fills the VALID_FORM honeypot -> 201, but the submission is not saved
 export const SUBMISSION_HONEYPOT_FILLED = {
-  imie: "Bot",
+  firstName: "Bot",
   bot_trap_field: "spam spam spam",
 };
 
 // -> 422 no_data
 export const SUBMISSION_EMPTY = {};
+export const SUBMISSION_ARRAY = ["a", "b"];
+
+// -> 400
+export const SUBMISSION_INVALID_JSON = '{"firstName": "John",';
+export const INVALID_JSON_MESSAGE =
+  "Body is not valid JSON but content-type is set to 'application/json'";
 
 // -> 413
 export const SUBMISSION_FIELD_NAME_TOO_LONG = {
-  ["p".repeat(101)]: "wartość",
+  ["f".repeat(101)]: "value",
 };
 
 // ~110 KB, max 100 KB -> 413
 export const SUBMISSION_TOO_LARGE = {
-  tekst: "x".repeat(110_000),
+  text: "x".repeat(110_000),
 };
 
 // 1001 fields, max 1000 -> 413
 export const SUBMISSION_TOO_MANY_FIELDS: Record<string, number> = {};
 for (let i = 1; i <= 1001; i++) {
-  SUBMISSION_TOO_MANY_FIELDS[`pole${i}`] = i;
+  SUBMISSION_TOO_MANY_FIELDS[`field${i}`] = i;
 }
 
 // values of the "error" field returned with 422
@@ -256,28 +290,64 @@ export const RATE_LIMIT = {
 };
 
 export const FORM_NOT_FOUND_MESSAGE = "Form not found";
+export const SUBMISSION_NOT_FOUND_MESSAGE = "Submission not found";
 
 // --- IDs ---
 
-export const NONEXISTENT_ID = "000000000000000000000000";
-export const MALFORMED_ID = "to-nie-jest-id";
+// both return 404, the API doesn't validate the id format
+export const NOT_FOUND_IDS = {
+  nonexistent: "000000000000000000000000",
+  malformed: "not-an-id",
+};
+
+// --- Analytics ---
+
+// one entry per day, both dates included
+export const ANALYTICS_RANGE = {
+  start_date: "2026-01-01",
+  end_date: "2026-01-07",
+};
+export const ANALYTICS_RANGE_DAYS = [
+  "2026-01-01",
+  "2026-01-02",
+  "2026-01-03",
+  "2026-01-04",
+  "2026-01-05",
+  "2026-01-06",
+  "2026-01-07",
+];
+
+export const ANALYTICS_RANGE_REVERSED = {
+  start_date: "2026-01-07",
+  end_date: "2026-01-01",
+};
+
+// -> 400 with `fields` in errors
+export const ANALYTICS_PARAMS_INVALID = {
+  noDates: { fields: ["start_date", "end_date"], params: {} },
+  noEndDate: { fields: ["end_date"], params: { start_date: "2026-01-01" } },
+  wrongFormat: {
+    fields: ["start_date"],
+    params: { start_date: "01.01.2026", end_date: "2026-01-07" },
+  },
+};
 
 // --- Submission list params ---
 
-export const LIST_PARAMS_VALID = {
-  firstPage: { limit: 10, offset: 0 },
-  oldestFirst: { sort: "ASC" },
-  newestFirst: { sort: "DESC" },
-  maxLimit: { limit: 500 },
-  search: { search: "Kowalska" },
-};
+// search is case-insensitive, only VALID_SUBMISSION has this
+export const LIST_SEARCH = "smith";
+export const LIST_SEARCH_NO_MATCH = "no-such-text";
+export const LIST_MAX_LIMIT = 500;
 
-// -> 400
+// -> 400 with `field` in errors
 export const LIST_PARAMS_INVALID = {
-  limitZero: { limit: 0 },
-  limitTooBig: { limit: 501 },
-  offsetNegative: { offset: -1 },
-  sortWrong: { sort: "UP" },
-  cursorTooShort: { cursor: "abc" }, // must be exactly 24 chars
-  searchTooLong: { search: "s".repeat(101) },
+  limitZero: { field: "limit", params: { limit: 0 } },
+  limitTooBig: { field: "limit", params: { limit: 501 } },
+  offsetNegative: { field: "offset", params: { offset: -1 } },
+  sortWrong: { field: "sort", params: { sort: "UP" } },
+  // must be exactly 24 chars
+  cursorTooShort: { field: "cursor", params: { cursor: "abc" } },
+  searchTooLong: { field: "search", params: { search: "s".repeat(101) } },
+  // with search, offset can be max 1
+  searchWithOffset: { field: "offset", params: { search: "a", offset: 2 } },
 };

@@ -5,7 +5,13 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # the dev API changes without commits here, so run it every night too
+  schedule:
+    - cron: "0 4 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 # cleanup deletes all forms in the team, so no parallel runs
 concurrency:
@@ -34,13 +40,15 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Type check
-        run: pnpm exec tsc --noEmit
+        run: pnpm typecheck
 
       - name: Run API tests
         run: pnpm test:api
         env:
           X_TEAM_ID_TEST_API: ${{ secrets.X_TEAM_ID_TEST_API }}
           X_API_KEY_TEST_API: ${{ secrets.X_API_KEY_TEST_API }}
+          # auth tests block the runner IP for 15 min, nightly only
+          RUN_AUTH_TESTS: ${{ github.event_name == 'schedule' && '1' || '' }}
 
       - name: Upload HTML report
         if: ${{ !cancelled() }}
