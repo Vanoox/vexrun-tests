@@ -71,7 +71,7 @@ Specs call the API only through the classes in `api/`, so an endpoint change nee
 - **Sorting:** `created_at` has one-second precision, so sort tests check the order of dates, not of ids.
 - **Sequential API runs:** one worker, because the cleanup step and the tests share one team.
 - **Error bodies:** a failed status check prints the URL and response body. Error tests check the invalid field (400) or the `error` code (422), since all submission errors share 422.
-- **Rate limits:** 15 submissions per minute per IP, so list tests share submissions, and on `rate_limit` a submission waits a minute and retries once. Auth and rate-limit tests run last (`api-limits`).
+- **Rate limits:** 15 submissions per minute per IP, so list tests share submissions, and on `rate_limit` a submission waits a minute and retries once. Rate-limit tests run after the main suite (`api-rate-limit`), auth tests run last (`api-auth`) because failed auth blocks the IP for 15 min.
 - **No secrets in reports:** traces are off for API tests (they store request headers), and the API key is replaced with `***` in request errors.
 
 ## Running the tests

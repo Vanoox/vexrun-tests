@@ -4,7 +4,7 @@
   "description": "API tests for Vexrun Forms written in Playwright + TypeScript",
   "scripts": {
     "test": "playwright test",
-    "test:api": "playwright test --project=api --project=api-limits",
+    "test:api": "playwright test --project=api --project=api-rate-limit --project=api-auth",
     "typecheck": "tsc --noEmit",
     "report": "playwright show-report"
   },
