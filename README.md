@@ -15,7 +15,7 @@ Automated API tests for the Vexrun Forms service (forms, submissions, analytics,
 
 **Analytics** (`/v1/forms/{id}/analytics`)
 - one entry per day for a date range, missing and wrong dates (400)
-- end date before start date – marked with `test.fail()`, the API returns 500
+- end date before start date (400 with a message)
 
 **Submissions** (`/v1/forms/{id}`, `/v1/forms/{id}/submissions`)
 - JSON submissions with different data types, nested objects, special characters, HTML/SQL strings, max field name length and max number of fields; the stored data is read back and compared

@@ -367,6 +367,8 @@ export const ANALYTICS_RANGE_REVERSED = {
   start_date: "2026-01-07",
   end_date: "2026-01-01",
 };
+export const ANALYTICS_RANGE_REVERSED_MESSAGE =
+  "Start date must not be after end date";
 
 // -> 400 with `fields` in errors
 export const ANALYTICS_PARAMS_INVALID = {

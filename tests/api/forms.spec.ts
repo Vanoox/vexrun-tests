@@ -22,6 +22,7 @@ import {
   ANALYTICS_RANGE,
   ANALYTICS_RANGE_DAYS,
   ANALYTICS_RANGE_REVERSED,
+  ANALYTICS_RANGE_REVERSED_MESSAGE,
   ANALYTICS_PARAMS_INVALID,
   SUBMISSION_SIMPLE,
 } from "../../test-data/api_test_data.js";
@@ -251,11 +252,10 @@ test.describe("Forms API – analytics", () => {
     formsApi,
     form,
   }) => {
-    test.fail(true, "API returns 500 for now, expected 400 or an empty list");
     const response = await formsApi.getAnalytics(
       form.id,
       ANALYTICS_RANGE_REVERSED,
     );
-    expect(response.status()).toBeLessThan(500);
+    await expectApiError(response, 400, ANALYTICS_RANGE_REVERSED_MESSAGE);
   });
 });
