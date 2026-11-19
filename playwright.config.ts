@@ -33,11 +33,19 @@ export default defineConfig({
       // room for the 60 s rate limit wait
       timeout: 120_000,
     },
-    // runs last - these can block our IP (auth for 15 min, submissions for 1 min)
+    // blocks submissions from our IP for 1 min
     {
-      name: "api-limits",
-      testMatch: /(auth|rate-limit)\.spec\.ts/,
+      name: "api-rate-limit",
+      testMatch: /rate-limit\.spec\.ts/,
       dependencies: ["api"],
+      workers: 1,
+    },
+    // must run last - failed auth blocks our IP for 15 min, after that
+    // every request (even with a valid key) gets 401
+    {
+      name: "api-auth",
+      testMatch: /auth\.spec\.ts/,
+      dependencies: ["api-rate-limit"],
       workers: 1,
     },
   ],
